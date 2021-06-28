@@ -5,9 +5,12 @@
 
 from flask import Flask
 from flask_restful import Api, Resource, abort, reqparse
+from flaskext.mysql import MySQL
 
 main = Flask(__name__)
 api = Api(main)
+
+
 
 ETUDIANTS = {
 
@@ -18,6 +21,7 @@ ETUDIANTS = {
     'MK004': { 'nom': 'Etudiant 4','prenom':'Etudiant x'},
     'MK005': { 'nom': 'Etudiant 5','prenom':'Etudiant x'}
 }
+
 parser = reqparse.RequestParser()
 parser.add_argument('nom')
 parser.add_argument('prenom')
@@ -83,6 +87,25 @@ class CreateUser(Resource):
         except Exception as e:
             return {'error': str(e)}
 
+
+        mysql = MySQL()
+        # MySQL configurations
+        main.config['MYSQL_DATABASE_USER'] = 'roor'
+        main.config['MYSQL_DATABASE_PASSWORD'] = '44114411Ab#'
+        main.config['MYSQL_DATABASE_DB'] = 'ItemListDb'
+        main.config['MYSQL_DATABASE_HOST'] = 'localhost'
+
+        mysql.init_app(main)
+        conn = mysql.connect()
+        cursor = conn.cursor()
+        cursor.callproc('spCreateUser',(_userEmail, _userPassword))
+        data = cursor.fetchall()
+
+        if len(data) is 0:
+            conn.commit()
+            return {'StatusCode': '200', 'Message': 'User creation success'}
+        else:
+            return {'StatusCode': '1000', 'Message': str(data[0])}
 
 
 api.add_resource(listeEtudiants, '/etudiants')
